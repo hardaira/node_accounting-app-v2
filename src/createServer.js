@@ -7,12 +7,11 @@ function createServer() {
   app.use(express.json());
 
   let expenses = [];
-  let users = [];
+  const users = [];
 
+  // Generate numeric IDs
   const generateId = (list) =>
-    list.length
-      ? (Math.max(...list.map((i) => Number(i.id))) + 1).toString()
-      : '1';
+    list.length ? Math.max(...list.map((i) => Number(i.id))) + 1 : 1; // Return next number
 
   // Endpoint to get all expenses
   app.get('/expenses', (req, res) => {
@@ -21,7 +20,7 @@ function createServer() {
 
   // Endpoint to get a specific expense by id
   app.get('/expenses/:id', (req, res) => {
-    const expense = expenses.find((e) => e.id === String(req.params.id));
+    const expense = expenses.find((e) => e.id === Number(req.params.id)); // Compare as numbers
     if (!expense) {
       return res.status(404).json({ message: 'Expense not found' });
     }
@@ -30,7 +29,7 @@ function createServer() {
 
   // Endpoint to create a new expense
   app.post('/expenses', (req, res) => {
-    const { userId, spentAt, title, amount, category } = req.body;
+    const { userId, spentAt, title, amount, category, note } = req.body;
 
     // Validation for required fields
     if (
@@ -43,16 +42,18 @@ function createServer() {
     ) {
       return res.status(400).json({
         message:
-          'Missing or invalid required fields: userId, spentAt, title, amount, category',
+          'Missing or invalid fields: userId, spentAt, title, amount, category',
       });
     }
 
     const user = users.find((u) => u.id === userId);
+
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
 
     const parsedSpentAt = new Date(spentAt);
+
     if (isNaN(parsedSpentAt)) {
       return res
         .status(400)
@@ -60,12 +61,13 @@ function createServer() {
     }
 
     const newExpense = {
-      id: generateId(expenses),
+      id: generateId(expenses), // Generate a numeric ID
       userId,
       spentAt: parsedSpentAt.toISOString(),
       title,
       amount,
       category,
+      note: note || '', // Default empty string if no note is provided
     };
 
     expenses.push(newExpense);
@@ -74,12 +76,13 @@ function createServer() {
 
   // Endpoint to update an existing expense
   app.put('/expenses/:id', (req, res) => {
-    const expense = expenses.find((e) => e.id === String(req.params.id));
+    const expense = expenses.find((e) => e.id === Number(req.params.id));
+
     if (!expense) {
       return res.status(404).json({ message: 'Expense not found' });
     }
 
-    const { userId, spentAt, title, amount, category } = req.body;
+    const { userId, spentAt, title, amount, category, note } = req.body;
 
     // Validation for required fields
     if (
@@ -92,13 +95,14 @@ function createServer() {
     ) {
       return res.status(400).json({
         message:
-          'Missing or invalid required fields: userId, spentAt, title, amount, category',
+          'Missing or invalid fields: userId, spentAt, title, amount, category',
       });
     }
 
     const user = users.find((u) => u.id === userId);
+
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(400).json({ message: 'User not found' });
     }
 
     expense.userId = userId;
@@ -106,13 +110,15 @@ function createServer() {
     expense.title = title;
     expense.amount = amount;
     expense.category = category;
+    expense.note = note || expense.note; // Retain old note if no new one is provided
 
     res.json(expense);
   });
 
   // Endpoint to delete an expense
   app.delete('/expenses/:id', (req, res) => {
-    const index = expenses.findIndex((e) => e.id === String(req.params.id));
+    const index = expenses.findIndex((e) => e.id === Number(req.params.id));
+
     if (index === -1) {
       return res.status(404).json({ message: 'Expense not found' });
     }
@@ -127,7 +133,8 @@ function createServer() {
 
   // Endpoint to get a specific user by id
   app.get('/users/:id', (req, res) => {
-    const user = users.find((u) => u.id === String(req.params.id));
+    const user = users.find((u) => u.id === Number(req.params.id)); // Compare as numbers
+
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
@@ -137,12 +144,14 @@ function createServer() {
   // Endpoint to create a new user
   app.post('/users', (req, res) => {
     const { name } = req.body;
+
+    // Validation for required fields
     if (!name) {
       return res.status(400).json({ message: 'Missing required field: name' });
     }
 
     const newUser = {
-      id: generateId(users),
+      id: generateId(users), // Generate a numeric ID
       name,
     };
 
@@ -152,12 +161,14 @@ function createServer() {
 
   // Endpoint to update an existing user
   app.put('/users/:id', (req, res) => {
-    const user = users.find((u) => u.id === String(req.params.id));
+    const user = users.find((u) => u.id === Number(req.params.id));
+
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
 
     const { name } = req.body;
+
     if (!name) {
       return res.status(400).json({ message: 'Missing required field: name' });
     }
@@ -168,10 +179,12 @@ function createServer() {
 
   // Endpoint to delete a user
   app.delete('/users/:id', (req, res) => {
-    const index = users.findIndex((u) => u.id === String(req.params.id));
+    const index = users.findIndex((u) => u.id === Number(req.params.id));
+
     if (index === -1) {
       return res.status(404).json({ message: 'User not found' });
     }
+
     const deletedUser = users.splice(index, 1)[0];
 
     // Delete any expenses associated with this user
