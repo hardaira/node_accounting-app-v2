@@ -7,7 +7,7 @@ function createServer() {
   app.use(express.json());
 
   let expenses = [];
-  let categories = [];
+  let users = [];
 
   const generateId = (list) =>
     list.length
@@ -30,38 +30,42 @@ function createServer() {
 
   // Endpoint to create a new expense
   app.post('/expenses', (req, res) => {
-    const { description, amount, categoryId, date } = req.body;
+    const { userId, spentAt, title, amount, category } = req.body;
 
     // Validation for required fields
     if (
-      !description ||
+      !userId ||
+      !spentAt ||
+      !title ||
       typeof amount !== 'number' ||
       isNaN(amount) ||
-      !categoryId ||
-      !date
+      !category
     ) {
       return res.status(400).json({
         message:
-          'Missing or invalid required fields: description, amount, categoryId, date',
+          'Missing or invalid required fields: userId, spentAt, title, amount, category',
       });
     }
 
-    const category = categories.find((c) => c.id === categoryId);
-    if (!category) {
-      return res.status(404).json({ message: 'Category not found' });
+    const user = users.find((u) => u.id === userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
     }
 
-    const parsedDate = new Date(date);
-    if (isNaN(parsedDate)) {
-      return res.status(400).json({ message: 'Invalid date format' });
+    const parsedSpentAt = new Date(spentAt);
+    if (isNaN(parsedSpentAt)) {
+      return res
+        .status(400)
+        .json({ message: 'Invalid date format for spentAt' });
     }
 
     const newExpense = {
       id: generateId(expenses),
-      description,
+      userId,
+      spentAt: parsedSpentAt.toISOString(),
+      title,
       amount,
-      categoryId,
-      date: parsedDate.toISOString(),
+      category,
     };
 
     expenses.push(newExpense);
@@ -75,31 +79,33 @@ function createServer() {
       return res.status(404).json({ message: 'Expense not found' });
     }
 
-    const { description, amount, categoryId, date } = req.body;
+    const { userId, spentAt, title, amount, category } = req.body;
 
     // Validation for required fields
     if (
-      !description ||
+      !userId ||
+      !spentAt ||
+      !title ||
       typeof amount !== 'number' ||
       isNaN(amount) ||
-      !categoryId ||
-      !date
+      !category
     ) {
       return res.status(400).json({
         message:
-          'Missing or invalid required fields: description, amount, categoryId, date',
+          'Missing or invalid required fields: userId, spentAt, title, amount, category',
       });
     }
 
-    const category = categories.find((c) => c.id === categoryId);
-    if (!category) {
-      return res.status(404).json({ message: 'Category not found' });
+    const user = users.find((u) => u.id === userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
     }
 
-    expense.description = description;
+    expense.userId = userId;
+    expense.spentAt = new Date(spentAt).toISOString();
+    expense.title = title;
     expense.amount = amount;
-    expense.categoryId = categoryId;
-    expense.date = new Date(date).toISOString();
+    expense.category = category;
 
     res.json(expense);
   });
@@ -114,41 +120,41 @@ function createServer() {
     res.status(204).send(); // No content to return
   });
 
-  // Endpoint to get all categories
-  app.get('/categories', (req, res) => {
-    res.json(categories);
+  // Endpoint to get all users
+  app.get('/users', (req, res) => {
+    res.json(users);
   });
 
-  // Endpoint to get a specific category by id
-  app.get('/categories/:id', (req, res) => {
-    const category = categories.find((c) => c.id === String(req.params.id));
-    if (!category) {
-      return res.status(404).json({ message: 'Category not found' });
+  // Endpoint to get a specific user by id
+  app.get('/users/:id', (req, res) => {
+    const user = users.find((u) => u.id === String(req.params.id));
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
     }
-    res.json(category);
+    res.json(user);
   });
 
-  // Endpoint to create a new category
-  app.post('/categories', (req, res) => {
+  // Endpoint to create a new user
+  app.post('/users', (req, res) => {
     const { name } = req.body;
     if (!name) {
       return res.status(400).json({ message: 'Missing required field: name' });
     }
 
-    const newCategory = {
-      id: generateId(categories),
+    const newUser = {
+      id: generateId(users),
       name,
     };
 
-    categories.push(newCategory);
-    res.status(201).json(newCategory);
+    users.push(newUser);
+    res.status(201).json(newUser);
   });
 
-  // Endpoint to update an existing category
-  app.put('/categories/:id', (req, res) => {
-    const category = categories.find((c) => c.id === String(req.params.id));
-    if (!category) {
-      return res.status(404).json({ message: 'Category not found' });
+  // Endpoint to update an existing user
+  app.put('/users/:id', (req, res) => {
+    const user = users.find((u) => u.id === String(req.params.id));
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
     }
 
     const { name } = req.body;
@@ -156,20 +162,20 @@ function createServer() {
       return res.status(400).json({ message: 'Missing required field: name' });
     }
 
-    category.name = name;
-    res.json(category);
+    user.name = name;
+    res.json(user);
   });
 
-  // Endpoint to delete a category
-  app.delete('/categories/:id', (req, res) => {
-    const index = categories.findIndex((c) => c.id === String(req.params.id));
+  // Endpoint to delete a user
+  app.delete('/users/:id', (req, res) => {
+    const index = users.findIndex((u) => u.id === String(req.params.id));
     if (index === -1) {
-      return res.status(404).json({ message: 'Category not found' });
+      return res.status(404).json({ message: 'User not found' });
     }
-    const deleted = categories.splice(index, 1)[0];
+    const deletedUser = users.splice(index, 1)[0];
 
-    // Delete any expenses associated with this category
-    expenses = expenses.filter((e) => e.categoryId !== deleted.id);
+    // Delete any expenses associated with this user
+    expenses = expenses.filter((e) => e.userId !== deletedUser.id);
 
     res.status(204).send(); // No content to return
   });
