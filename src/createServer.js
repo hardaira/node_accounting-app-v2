@@ -14,9 +14,38 @@ function createServer() {
     list.length ? Math.max(...list.map((i) => Number(i.id))) + 1 : 1; // Return next number
 
   // Endpoint to get all expenses
+  // app.get('/expenses', (req, res) => {
+  //   res.json(expenses);
+  // });
+
   app.get('/expenses', (req, res) => {
-    res.json(expenses);
-  });
+  const { category, user, startDate, endDate } = req.query;
+
+  let filteredExpenses = expenses;
+
+  // Filter by category if provided
+  if (category) {
+    filteredExpenses = filteredExpenses.filter(e => e.category === category);
+  }
+
+  // Filter by user if provided
+  if (user) {
+    filteredExpenses = filteredExpenses.filter(e => e.user === user);
+  }
+
+  // Filter by date range if provided
+  if (startDate && endDate) {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    filteredExpenses = filteredExpenses.filter(e => {
+      const expenseDate = new Date(e.date);
+      return expenseDate >= start && expenseDate <= end;
+    });
+  }
+
+  res.json(filteredExpenses);
+});
+
 
   // Endpoint to get a specific expense by id
   app.get('/expenses/:id', (req, res) => {
@@ -49,7 +78,7 @@ function createServer() {
     const user = users.find((u) => u.id === userId);
 
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(400).json({ message: 'User not found' });
     }
 
     const parsedSpentAt = new Date(spentAt);
@@ -102,7 +131,7 @@ function createServer() {
     const user = users.find((u) => u.id === userId);
 
     if (!user) {
-      return res.status(400).json({ message: 'User not found' });
+      return res.status(404).json({ message: 'User not found' });
     }
 
     expense.userId = userId;
