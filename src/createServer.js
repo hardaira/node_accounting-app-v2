@@ -19,26 +19,26 @@ function createServer() {
   // });
 
   app.get('/expenses', (req, res) => {
-    const { category, userId, startDate, endDate } = req.query;
+    const { categories, userId, from, to } = req.query;
 
     let filteredExpenses = expenses;
 
     // Filter by category if provided
-    if (category) {
+    if (categories) {
       filteredExpenses = filteredExpenses.filter(
-        (e) => e.category === category,
+        (e) => categories.includes(e.category),
       );
     }
 
     // Filter by userId if provided
     if (userId) {
-      filteredExpenses = filteredExpenses.filter((e) => e.userId === userId);
+      filteredExpenses = filteredExpenses.filter((e) => e.userId === +userId);
     }
 
     // Filter by date range if provided (startDate and endDate should be in ISO format)
-    if (startDate && endDate) {
-      const start = new Date(startDate);
-      const end = new Date(endDate);
+    if (from && to) {
+      const start = new Date(from);
+      const end = new Date(to);
 
       filteredExpenses = filteredExpenses.filter((e) => {
         const expenseDate = new Date(e.spentAt); // Ensure spentAt is in Date format
