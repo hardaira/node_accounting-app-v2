@@ -19,32 +19,35 @@ function createServer() {
   // });
 
   app.get('/expenses', (req, res) => {
-  const { category, user, startDate, endDate } = req.query;
+    const { category, userId, startDate, endDate } = req.query;
 
-  let filteredExpenses = expenses;
+    let filteredExpenses = expenses;
 
-  // Filter by category if provided
-  if (category) {
-    filteredExpenses = filteredExpenses.filter(e => e.category === category);
-  }
+    // Filter by category if provided
+    if (category) {
+      filteredExpenses = filteredExpenses.filter(
+        (e) => e.category === category,
+      );
+    }
 
-  // Filter by user if provided
-  if (user) {
-    filteredExpenses = filteredExpenses.filter(e => e.user === user);
-  }
+    // Filter by userId if provided
+    if (userId) {
+      filteredExpenses = filteredExpenses.filter((e) => e.userId === userId);
+    }
 
-  // Filter by date range if provided
-  if (startDate && endDate) {
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    filteredExpenses = filteredExpenses.filter(e => {
-      const expenseDate = new Date(e.date);
-      return expenseDate >= start && expenseDate <= end;
-    });
-  }
+    // Filter by date range if provided (startDate and endDate should be in ISO format)
+    if (startDate && endDate) {
+      const start = new Date(startDate);
+      const end = new Date(endDate);
 
-  res.json(filteredExpenses);
-});
+      filteredExpenses = filteredExpenses.filter((e) => {
+        const expenseDate = new Date(e.spentAt); // Ensure spentAt is in Date format
+        return expenseDate >= start && expenseDate <= end;
+      });
+    }
+
+    res.json(filteredExpenses);
+  });
 
 
   // Endpoint to get a specific expense by id
@@ -134,11 +137,11 @@ function createServer() {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    expense.userId = userId;
+    expense.userId = userId || expense.userId;
     expense.spentAt = new Date(spentAt).toISOString();
-    expense.title = title;
-    expense.amount = amount;
-    expense.category = category;
+    expense.title = title || expense.title;
+    expense.amount = amount || expense.amount;
+    expense.category = category || expense.category;
     expense.note = note || expense.note; // Retain old note if no new one is provided
 
     res.json(expense);
