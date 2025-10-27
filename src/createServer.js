@@ -107,44 +107,15 @@ function createServer() {
   });
 
   // Endpoint to update an existing expense
-  app.put('/expenses/:id', (req, res) => {
+  app.patch('/expenses/:id', (req, res) => {
     const expense = expenses.find((e) => e.id === Number(req.params.id));
 
     if (!expense) {
       return res.status(404).json({ message: 'Expense not found' });
     }
 
-    const { userId, spentAt, title, amount, category, note } = req.body;
-
-    // Validation for required fields
-    if (
-      !userId ||
-      !spentAt ||
-      !title ||
-      typeof amount !== 'number' ||
-      isNaN(amount) ||
-      !category
-    ) {
-      return res.status(400).json({
-        message:
-          'Missing or invalid fields: userId, spentAt, title, amount, category',
-      });
-    }
-
-    const user = users.find((u) => u.id === userId);
-
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-
-    expense.userId = userId || expense.userId;
-    expense.spentAt = new Date(spentAt).toISOString();
-    expense.title = title || expense.title;
-    expense.amount = amount || expense.amount;
-    expense.category = category || expense.category;
-    expense.note = note || expense.note; // Retain old note if no new one is provided
-
-    res.json(expense);
+const updatedExpense = Object.assign(expense, req.body);
+    res.json(updatedExpense);
   });
 
   // Endpoint to delete an expense
@@ -192,7 +163,7 @@ function createServer() {
   });
 
   // Endpoint to update an existing user
-  app.put('/users/:id', (req, res) => {
+  app.patch('/users/:id', (req, res) => {
     const user = users.find((u) => u.id === Number(req.params.id));
 
     if (!user) {
